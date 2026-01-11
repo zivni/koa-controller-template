@@ -1,0 +1,44 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "server-watch-debug",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "ts-node-dev-server-app"
+            ],
+            "env": {
+                "NODE_APP_INSTANCE": "site",
+                "DEV_MODE": "true"
+            },
+            "outputCapture": "std",
+            "cwd": "${workspaceRoot}/server",
+            "internalConsoleOptions": "openOnSessionStart",
+        },
+        {
+            "name": "server-onced-debug",
+            "type": "node",
+            "request": "launch",
+            "args": [
+                "${workspaceRoot}/server/src/app.ts",
+            ],
+            "runtimeArgs": [
+                "-r",
+                "ts-node/register"
+            ],
+            "env": {
+                "NODE_APP_INSTANCE": "site",
+                "DEV_MODE": "true",
+            },
+            "outputCapture": "std",
+            "cwd": "${workspaceRoot}/server",
+            "internalConsoleOptions": "openOnSessionStart",
+        }
+    ]
+}

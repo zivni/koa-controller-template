@@ -1,0 +1,12 @@
+{
+    "cSpell.language": "en,he",
+    "rest-client.environmentVariables": {
+        "$shared": {
+            "baseUrl": "http://localhost:4002"
+        }
+    },
+    "rest-client.defaultHeaders": {
+        "Cookie": "1"
+    },
+    "editor.formatOnSave": true,
+}

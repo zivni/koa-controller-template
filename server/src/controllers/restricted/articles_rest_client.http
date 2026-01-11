@@ -1,0 +1,26 @@
+@BASE_URL={{baseUrl}}/restricted/articles
+
+### Get Article by ID
+GET  {{BASE_URL}}/get/plain/123/ad
+Content-Type: application/json
+
+### Get Article by ID
+GET  {{BASE_URL}}/get/decorator/123/2002-01-08?someQuery=true
+Content-Type: application/json
+
+### Post Article
+POST  {{BASE_URL}}/post/plain/123/ad
+Content-Type: application/json
+
+{
+    "type": "news"
+}
+
+### Post Article
+POST  {{BASE_URL}}/post/decorator/12
+Content-Type: application/json
+
+{
+    "type": "news1",
+    "date": "2002-01-08T03:23:00.000Z"
+}

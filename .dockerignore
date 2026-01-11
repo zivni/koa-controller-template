@@ -1,0 +1,18 @@
+.git
+.vscode
+.devcontainer
+Dockerfile
+**/node_modules/
+**/*.map
+**/*.js
+**/*.orig
+/.awcache/
+**/*.log
+**/*.txt
+**/*.md
+**/*.bak
+**/*.sh
+dist
+
+#do not add docker image saved file
+*.tar.gz
