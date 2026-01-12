@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import checker from 'vite-plugin-checker';
 import react from '@vitejs/plugin-react';
 import EntryShakingPlugin from 'vite-plugin-entry-shaking';
+import outputManifest from 'rollup-plugin-output-manifest';
 import { resolve } from 'node:path';
 
 // https://vite.dev/config/
@@ -21,7 +22,12 @@ export default defineConfig(({ mode }) => ({
         }),
     ],
     build: {
-        outDir: mode === 'local' ? '../server/public/dist' : 'dist',
+        outDir: mode === 'local_build' ? '../server/public/dist' : 'dist',
+        sourcemap: true,
+        emptyOutDir: true,
+        rollupOptions: {
+            plugins: [outputManifest({ fileName: "frontend_files.json", nameWithExt: false })]
+        }
     },
     server: {
         host: true,

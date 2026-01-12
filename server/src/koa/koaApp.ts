@@ -20,7 +20,7 @@ type Writeable<T> = { -readonly [P in keyof T]: T[P] };
 type KoaContext = Application.DefaultContext & Writeable<ILocalCtxStorageProps>;
 
 
-const publicFolder = path.resolve(__dirname, "../public");
+const publicFolder = path.resolve(__dirname, "../../public");
 
 @injectable()
 export class KoaApp implements IWebApp {

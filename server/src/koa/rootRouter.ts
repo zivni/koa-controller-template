@@ -8,6 +8,7 @@ import { ILogger } from "../logger/loggerInterface";
 import { ApiError } from "../ApiError";
 import { ILocalCtxStorageProps } from "../LocalCtxStorageInterface";
 import { ServerErrorCodes } from "../../../integrationInterfaces/siteInterfaces";
+import { IndexPage } from "../indexPage/indexPage";
 import { RestrictedRouter } from "../controllers/restricted/restrictedRouter";
 
 
@@ -17,6 +18,7 @@ export class RootRouter extends KoaAppRouterBase {
         @inject(IOC_TYPES.LoggerFactory) loggerFactory: LoggerFactory,
         @inject(IOC_TYPES.UrlResolver) urlResolver: UrlResolver,
         @inject(IOC_TYPES.LocalCtxStorage) private localCtxStorage: ILocalCtxStorageProps,
+        indexPage: IndexPage,
         restrictedRouter: RestrictedRouter,
     ) {
         super();
@@ -28,7 +30,9 @@ export class RootRouter extends KoaAppRouterBase {
 
         this._router.use("/restricted", restrictedRouter.routes);
 
-
+        this._router.get(/^\//, async (ctx, next) => {
+            ctx.body = await indexPage.get(ctx);
+        })
         try {
             logger.debug("registered urls:")
             this._router.stack.forEach(i => {
@@ -40,18 +44,6 @@ export class RootRouter extends KoaAppRouterBase {
     private appLogger: ILogger
 
     private setup() {
-        this._router.get("/buildtime", (ctx) => {
-            let response = {} as any;
-            try {
-                response = require("./buildtime.json");
-            } catch {
-                response.build_time = "no build time"
-            }
-            response.ip = getClientIp(ctx.req);
-            response.origin = ctx.headers.origin
-            response.userAgent = ctx.headers["user-agent"];
-            ctx.body = response;
-        })
         this._router.use(async (ctx, next) => {
             try {
                 await next();
