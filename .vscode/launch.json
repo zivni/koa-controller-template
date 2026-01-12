@@ -3,9 +3,25 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [
+    "compounds": [
         {
             "name": "server-watch-debug",
+            "configurations": [
+                "(internal) server-watch-debug",
+                "(internal) frontend-dev-server"
+            ]
+        },
+        {
+            "name": "server-onced-debug",
+            "configurations": [
+                "(internal) server-onced-debug",
+                "(internal) frontend-dev-server"
+            ]
+        }
+    ],
+    "configurations": [
+        {
+            "name": "(internal) server-watch-debug",
             "type": "node",
             "request": "launch",
             "runtimeExecutable": "npm",
@@ -19,10 +35,10 @@
             },
             "outputCapture": "std",
             "cwd": "${workspaceRoot}/server",
-            "internalConsoleOptions": "openOnSessionStart",
+            "internalConsoleOptions": "openOnSessionStart"
         },
         {
-            "name": "server-onced-debug",
+            "name": "(internal) server-onced-debug",
             "type": "node",
             "request": "launch",
             "args": [
@@ -38,7 +54,20 @@
             },
             "outputCapture": "std",
             "cwd": "${workspaceRoot}/server",
-            "internalConsoleOptions": "openOnSessionStart",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "name": "(internal) frontend-dev-server",
+            "type": "node",
+            "request": "launch",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "dev-server"
+            ],
+            "cwd": "${workspaceRoot}/frontend",
+            "console": "internalConsole",
+            "internalConsoleOptions": "openOnSessionStart"
         }
     ]
 }
