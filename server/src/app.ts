@@ -9,6 +9,8 @@ process.env.TZ = "Asia/Jerusalem";
 const logger = iocContainer.get<ILoggerFactory>(IOC_TYPES.LoggerFactory).getNewLogger(null, "app");
 
 let appInstanceType: typeof IOC_TYPES.WebApp;
+
+// this is an example of using different app instances for different purposes
 switch (process.env.NODE_APP_INSTANCE) {
     case "site":
         appInstanceType = IOC_TYPES.WebApp;

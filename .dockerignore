@@ -12,7 +12,7 @@ Dockerfile
 **/*.md
 **/*.bak
 **/*.sh
-dist
+**/dist/
 
 #do not add docker image saved file
 *.tar.gz
