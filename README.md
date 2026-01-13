@@ -16,7 +16,9 @@ And why controllers? they make the writing of API route handling code less redun
 1. Copy the code to a new project.
 2. Open it in VsCode.
 3. Choose "Reopen in container" (dev containers are great)
-4. In the terminal run `cd /workspaces/koa-controller-template/frontend && yarn run build-local` (This creates files from the frontend example project so we'll see some UI)
+4. In the terminal run:
+    1. `cd /workspaces/koa-controller-template/server && yarn`
+    2. `cd /workspaces/koa-controller-template/frontend && yarn && yarn run build-local` (This creates files from the frontend example project so we'll see some UI)
 5. In the debug view, choose "server watch debug" ("server once debug" if you need to debug startup code before the debugger attaches in the watch mode)
 6. See in the ports tab what address is mapped to port 4002, and open that address in your browser.  
 Pressing the "get data" button will call the server to fetch some data.
