@@ -12,9 +12,9 @@
             ]
         },
         {
-            "name": "server-onced-debug",
+            "name": "server-once-debug",
             "configurations": [
-                "(internal) server-onced-debug",
+                "(internal) server-once-debug",
                 "(internal) frontend-dev-server"
             ]
         }
@@ -38,7 +38,7 @@
             "internalConsoleOptions": "openOnSessionStart"
         },
         {
-            "name": "(internal) server-onced-debug",
+            "name": "(internal) server-once-debug",
             "type": "node",
             "request": "launch",
             "args": [
