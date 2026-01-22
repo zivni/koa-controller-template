@@ -1,3 +1,4 @@
+import { ParameterValidationOptions } from "@koa/router";
 import { RequestOptions } from "../commonInterfaces";
 
 export const routeParameterMetadataKey = Symbol("routeParameterMetadataKey");
@@ -14,6 +15,8 @@ export type RouteParameterMetaData = {
 };
 export type RouteParameterOptions = {
     disableTypeConversion?: boolean;
+    validationPattern?: RegExp;
+    validationOptions?: ParameterValidationOptions
 };
 
 export type RouteInjectedValueMetaData<Key extends PropertyKey> = {

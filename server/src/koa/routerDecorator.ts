@@ -1,5 +1,5 @@
 import { Readable } from "node:stream";
-import Router, { RouterMiddleware } from "@koa/router";
+import Router, { createParameterValidationMiddleware, RouterMiddleware } from "@koa/router";
 import multer from "@koa/multer"
 import { DefaultContext, DefaultState, ParameterizedContext } from "koa"
 import { decorate, injectFromBase, injectable } from "inversify";
@@ -110,6 +110,7 @@ export function Controller(prefix: string, { middlewares, controllersIocTypes }:
 
                 for (let routeDefinition of existingRouteDefinitions) {
                     const { route, func, routeParameters } = routeDefinition;
+                    const validationMiddlewares = getRouteValidationMiddlewares(routeParameters);
                     let options = routeDefinition.options;
                     if (!options) options = { method: "get" }
                     switch (options.method) {
@@ -120,9 +121,12 @@ export function Controller(prefix: string, { middlewares, controllersIocTypes }:
                                 const body = options.disableBodyDateConversion ? ctx.request.body : convertBodyDates(ctx);
                                 return await func.call(this, ...paramArgs, body, requestOptions)
                             }
-                            const middlewares = [getRouteMiddleware(options, postFunctionCall)]
+                            const middlewares: any[] = [getRouteMiddleware(options, postFunctionCall)]
                             if (options.postFileFieldName) {
                                 middlewares.unshift(upload.single(options.postFileFieldName))
+                            }
+                            if (validationMiddlewares.length > 0) {
+                                middlewares.unshift(...validationMiddlewares);
                             }
                             if (options.reloadAccessTokenAfter || options.reloadAccessTokenBefore) {
                                 if (!options.routeName) {
@@ -165,9 +169,9 @@ export function Controller(prefix: string, { middlewares, controllersIocTypes }:
                                 if (Array.isArray(route)) {
                                     throw "routeName cannot be used with an array of routes"
                                 }
-                                this._router.get(options.routeName, route, getRouteMiddleware(options, getFunctionCall))
+                                this._router.get(options.routeName, route, ...validationMiddlewares, getRouteMiddleware(options, getFunctionCall))
                             } else {
-                                this._router.get(route, getRouteMiddleware(options, getFunctionCall))
+                                this._router.get(route, ...validationMiddlewares, getRouteMiddleware(options, getFunctionCall))
                             }
                             break;
                     }
@@ -295,6 +299,13 @@ function getRouteMiddleware(options: RouteOptions, functionCall: (ctx: DefaultCo
             }
         }
     };
+}
+
+function getRouteValidationMiddlewares(routeParameters: RouteParameterMetaData[]) {
+    if (routeParameters?.length === 0) return [];
+    return routeParameters
+        .filter(rp => rp.options.validationPattern)
+        .map(rp => createParameterValidationMiddleware(rp.parameterName, rp.options.validationPattern, rp.options.validationOptions));
 }
 
 export function bindControllerToParentRouter(router: Router, controller: any) {
