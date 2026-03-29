@@ -2,7 +2,7 @@
 *.js
 
 .vite/
-.github/
+.github/*
 # Logs
 logs
 *.log
@@ -32,3 +32,8 @@ dist-ssr
 #allow
 !*.config.js
 !jest.setup.js
+
+# Track instruction files in .github/
+!.github/copilot-*.md
+!.github/skills/
+!.github/skills/**
