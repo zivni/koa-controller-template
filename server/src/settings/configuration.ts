@@ -1,6 +1,6 @@
 import { injectable } from "inversify";
 import config from "config";
-import { IConfiguration } from "./configurationInterface";
+import { IConfiguration, SbSqliteConfig } from "./configurationInterface";
 
 
 const booleanRegex = /^\s*(true|1|on)\s*$/i;
@@ -21,5 +21,9 @@ export class Configuration implements IConfiguration {
 
     public get logPretty(): boolean {
         return config.get("log.pretty")
+    }
+
+    public get db(): SbSqliteConfig {
+        return config.get("db")
     }
 }

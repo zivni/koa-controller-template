@@ -4,11 +4,17 @@ import { Controller, Route } from "../../koa/routerDecorator";
 import { RouteParam, ReqOption, ReqState, ReqBody } from "../../koa/routeArgDecorators";
 import { ILogger, ILoggerFactory } from "../../logger/loggerInterface";
 import { IOC_TYPES } from "../../settings/iocTypes";
+import { CreateArticlesTask } from "./createArticlesTask";
+
+import { IArticlesDal } from "../../dal/interfaces/articlesDalInterface";
+import { IOC_DAL_TYPES } from "../../settings/iocTypes";
 
 @Controller('/articles')
 export class ArticlesController {
     constructor(
         @inject(IOC_TYPES.LoggerFactory) loggerFactory: ILoggerFactory,
+        private readonly createArticlesTask: CreateArticlesTask,
+        @inject(IOC_DAL_TYPES.articles) private readonly articlesDal: IArticlesDal,
     ) {
         this.logger = loggerFactory.getNewLogger(null, this.constructor.name);
     }
@@ -18,6 +24,19 @@ export class ArticlesController {
     public async getArticles({ id, title }: { id: string, title?: string }, requestOptions: RequestOptions) {
         this.logger.info("getArticles called", { id, title, url: requestOptions.ctx.url });
         return { id, title: title || "Sample Article" };
+    }
+
+    @Route("/generate/:count")
+    public async generateArticles(@RouteParam("count") count: number) {
+        this.logger.info("generateArticles called", { count });
+        await this.createArticlesTask.run(count);
+        return { generated: count };
+    }
+
+    @Route("/search", { method: "post" })
+    public async searchArticlesPost(@ReqBody body: { titlePart?: string }) {
+        this.logger.info("searchArticlesPost called", { titlePart: body.titlePart });
+        return this.articlesDal.searchArticles({ titlePart: body.titlePart });
     }
 
     @Route("/get/decorator/:id/:date{/:title}")

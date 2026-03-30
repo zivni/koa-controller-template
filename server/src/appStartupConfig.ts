@@ -6,6 +6,7 @@ import { inject, injectable } from "inversify";
 import { ILogger, ILoggerFactory } from "./logger/loggerInterface";
 
 import { IOC_TYPES } from "./settings/iocTypes";
+import { SqlDdlRunner } from "./dal/sqlite/base/sqlDdlRunner";
 
 //days.js configuration
 dayjs.extend(duration);
@@ -16,6 +17,7 @@ dayjs.extend(minMax);
 export class AppStartupConfig {
     constructor(
         @inject(IOC_TYPES.LoggerFactory) loggerFactory: ILoggerFactory,
+        @inject(IOC_TYPES.SqlDdlRunner) private sqlDdlRunner: SqlDdlRunner,
     ) {
         this.logger = loggerFactory.getNewLogger();
     }
@@ -23,6 +25,6 @@ export class AppStartupConfig {
 
 
     public async dbSetup() {
-
+        await this.sqlDdlRunner.updateDB();
     }
 }

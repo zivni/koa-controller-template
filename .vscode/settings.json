@@ -9,4 +9,7 @@
         "Cookie": "1"
     },
     "editor.formatOnSave": true,
+    "cSpell.words": [
+        "kysely"
+    ],
 }

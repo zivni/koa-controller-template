@@ -5,4 +5,7 @@
     silent: false,
     pretty: true,
   },
+  db: {
+    databaseFilePath: ":memory:",
+  }
 }

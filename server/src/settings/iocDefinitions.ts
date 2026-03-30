@@ -10,9 +10,14 @@ import { LocalCtxStorage } from "../localCtxStorage";
 import { LoggerFactory } from "../logger/logger";
 import { ILoggerFactory } from "../logger/loggerInterface";
 import { IWebApp } from "../webAppInterface";
-import { IOC_TYPES } from "./iocTypes";
+import { IOC_DAL_TYPES, IOC_TYPES } from "./iocTypes";
 import { KoaAppRouterBase } from "../koa/koaAppRouterInterface";
 import { RootRouter } from "../koa/rootRouter";
+import { SqlDdlRunner } from "../dal/sqlite/base/sqlDdlRunner";
+import { IArticlesDal } from "../dal/interfaces/articlesDalInterface";
+import { ArticlesDal } from "../dal/sqlite/articlesDal";
+import { IArticleLikesDal } from "../dal/interfaces/articleLikesDalInterface";
+import { ArticleLikesDal } from "../dal/sqlite/articleLikesDal";
 
 // We need to set skipBaseClassChecks: true for the @Controller decorator wo work.
 //see https://github.com/inversify/InversifyJS/blob/master/wiki/inheritance.md#workaround-e-skip-base-class-injectable-checks
@@ -26,6 +31,12 @@ thisContainer.bind(IOC_TYPES.LocalCtxStorage).to(LocalCtxStorage)
 thisContainer.bind(IOC_TYPES.AppStartUpConfig).to(AppStartupConfig)
 
 thisContainer.bind<ILoggerFactory>(IOC_TYPES.LoggerFactory).to(LoggerFactory)
+
+//DAL bindings:
+thisContainer.bind(IOC_TYPES.SqlDdlRunner).to(SqlDdlRunner);
+thisContainer.bind<IArticlesDal>(IOC_DAL_TYPES.articles).to(ArticlesDal);
+thisContainer.bind<IArticleLikesDal>(IOC_DAL_TYPES.articleLikes).to(ArticleLikesDal);
+
 
 //Those are also needed to work with the  @Controller decorator:
 

@@ -16,6 +16,18 @@ Content-Type: application/json
     "type": "news"
 }
 
+### Generate Articles
+GET  {{BASE_URL}}/generate/5
+Content-Type: application/json
+
+### Search Articles (POST)
+POST  {{BASE_URL}}/search
+Content-Type: application/json
+
+{
+   
+}
+
 ### Post Article
 POST  {{BASE_URL}}/post/decorator/12
 Content-Type: application/json

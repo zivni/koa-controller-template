@@ -7,9 +7,11 @@ export const IOC_TYPES = {
     UrlResolver: Symbol("UrlResolver"),
     RootRouter: Symbol("RootRouter"),
     importerApp: Symbol("importerApp"),
+    SqlDdlRunner: Symbol("SqlDdlRunner"),
 
 }
 
 export const IOC_DAL_TYPES = {
-
+    articles: Symbol("ArticlesDal"),
+    articleLikes: Symbol("ArticleLikesDal"),
 }
