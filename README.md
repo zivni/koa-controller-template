@@ -49,6 +49,46 @@ Each controller is connected to a router which group similar controllers, The gr
 
 Look at `server/src/controllers/restricted/restrictedRouter.ts` For and example. It shows who to bind the `articlesController` to the router using the `bindControllerToParentRouter` function.
 
+#### DB access with Kysely
+Database access is implemented with [Kysely](https://kysely.dev/) and follows a DAL pattern:
+
+1. The shared DB schema type is defined in `server/src/dal/database.ts` (the `Database` interface).
+2. DAL classes (for example `server/src/dal/sqlite/articlesDal.ts`) extend `SqlDal` and run typed queries with Kysely.
+3. DAL classes must be registered in IoC with `IOC_DAL_TYPES` (`server/src/settings/iocTypes.ts`) and bound in `server/src/settings/iocDefinitions.ts`.
+4. A single Kysely connection is created in `server/src/dal/sqlite/base/sqlBase.ts` using the SQLite dialect (`better-sqlite3`) and reused by all DALs.
+5. Migrations are collected from each DAL's `setup` property and executed by `server/src/dal/sqlite/base/sqlDdlRunner.ts`.
+
+In short: controllers call services, services call DAL interfaces, and DAL implementations encapsulate all SQL/Kysely logic.
+
+##### About SQLite in this template
+SQLite is used here only as a simple runnable example. If you want to use another database:
+
+1. Replace the SQLite setup in `server/src/dal/sqlite/base/sqlBase.ts` (dialect and client creation).
+2. Update or replace DAL implementations under `server/src/dal/sqlite/`.
+3. Keep and update `server/src/dal/database.ts` as the shared typed schema contract.
+
+If you remove SQLite, you can remove these SQLite-oriented packages from `server/package.json`:
+
+*   `better-sqlite3`
+*   `kysely-plugin-serialize` (remove it if you do not need its automatic value serialization/deserialization behavior)
+
+(`kysely` remains, because it is the query builder itself.)
+
+##### DAL interfaces vs direct DAL classes
+This template uses DAL interfaces (for example `IArticlesDal`, `IArticleLikesDal`) so changing DB implementations is easier.
+
+If you do not want interfaces, you can inject DAL classes directly. In that case, it is recommended to keep each DAL and its DB types file together in a table folder under `server/src/dal/`, for example:
+
+```text
+server/src/dal/
+    articles/
+        articlesDal.ts
+        articlesDbTypes.ts
+    articleLikes/
+        articleLikesDal.ts
+        articleLikesDbTypes.ts
+```
+
 ### The Controller
 The controller is where you define your API endpoints and business logic. It uses decorators to map routes and inject parameters, keeping the code clean and focused.
 
