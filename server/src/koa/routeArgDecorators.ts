@@ -2,6 +2,7 @@ import { ParameterValidationOptions } from "@koa/router";
 import { RequestOptions } from "../commonInterfaces";
 
 export const routeParameterMetadataKey = Symbol("routeParameterMetadataKey");
+export const routeQueryParameterMetadataKey = Symbol("routeQueryParameterMetadataKey");
 export const routeBodyArgumentMetadataKey = Symbol("routeBodyArgumentMetadataKey");
 export const routeRequestOptionMetadataKey = Symbol("routeRequestOptionMetadataKey");
 export const routeStateVarMetadataKey = Symbol("routeStateVarMetadataKey");
@@ -17,6 +18,19 @@ export type RouteParameterOptions = {
     disableTypeConversion?: boolean;
     validationPattern?: RegExp;
     validationOptions?: ParameterValidationOptions
+};
+
+export type QueryParameterOptions = {
+    disableTypeConversion?: boolean;
+    validationPattern?: RegExp;
+    arrayType?: NumberConstructor | DateConstructor;
+};
+
+export type QueryParameterMetaData = {
+    parameterIndex: number;
+    parameterName: string;
+    parameterType: string;
+    options: QueryParameterOptions;
 };
 
 export type RouteInjectedValueMetaData<Key extends PropertyKey> = {
@@ -64,6 +78,16 @@ export function RouteParam(parameterName: string, options: RouteParameterOptions
         const parameterType = propertyTypes[parameterIndex].name;
         existingRouteParameters.push({ parameterIndex, parameterName, parameterType, options });
         Reflect.defineMetadata(routeParameterMetadataKey, existingRouteParameters, target, propertyKey);
+    }
+}
+
+export function QueryParam(parameterName: string, options: QueryParameterOptions = {}) {
+    return function (target: any, propertyKey: string | symbol, parameterIndex: number) {
+        const existingQueryParameters: QueryParameterMetaData[] = Reflect.getOwnMetadata(routeQueryParameterMetadataKey, target, propertyKey) || [];
+        const propertyTypes = Reflect.getOwnMetadata("design:paramtypes", target, propertyKey);
+        const parameterType = propertyTypes[parameterIndex].name;
+        existingQueryParameters.push({ parameterIndex, parameterName, parameterType, options });
+        Reflect.defineMetadata(routeQueryParameterMetadataKey, existingQueryParameters, target, propertyKey);
     }
 }
 

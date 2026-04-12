@@ -112,9 +112,10 @@ export class ArticlesController {
 Instead of accessing the params and body by argument position, you can inject them directly into your method arguments:
 
 *   `@RouteParam("name")`: Extracts a URL parameter. It automatically handles type conversion for `Number` and `Date`.
+*   `@QueryParam("name")`: Extracts a query parameter. Supports validation via `validationPattern`, array values, and array item type conversion via `arrayType` (`Number`/`Date`).
 *   `@ReqBody`: Injects the request body (typically for POST requests).
-*   `@ReqOption("key")`: Injects a property from `RequestOptions` (e.g., `ctx` for the full context, or helper functions).
-*   `@ReqState("key")`: Injects a value from `ctx.state` (useful for data passed by middleware, like user details).
+*   `@ReqOption("key")`: Injects a property from `RequestOptions` (e.g., `ctx` for the full context, or helper functions) with compile-time type checks.
+*   `@ReqState("key")`: Injects a value from `ctx.state` (useful for data passed by middleware, like user details) with compile-time type checks.
 
 **Example with Decorators:**
 ```typescript
@@ -132,13 +133,16 @@ public async postArticle(
 The `@Route` decorator accepts an options object as the second argument:
 *   `method`: HTTP method, `"get"` (default) or `"post"`.
 *   `routeName`: Assigns a name to the route. Required if using access token reloading hooks.
+*   `reloadAccessTokenBefore` / `reloadAccessTokenAfter`: Marks named routes for token reload handling before/after handler execution.
 *   `responseContentType`: Sets the `Content-Type` header (e.g., `"application/json"`).
 *   `headers`: Object containing static response headers.
 *   `disableBodyDateConversion`: If `true`, disables the automatic conversion of ISO 8601 date strings in the body to `Date` objects.
+*   `validationSchema`: A Zod schema used to validate request body payloads. Invalid payloads return HTTP 400 with validation details.
 *   `postFileFieldName`: If set, handles `multipart/form-data` file uploads using `multer`. The file is available in `ctx.req.file`.
 *   `returnType`: Controls how the return value is handled.
     *   `basic` (default): Returns the object as the response body (JSON).
     *   `stream`: For streaming responses. The handler should write to the stream provided in `RequestOptions`.
+    *   `sse`: Server-Sent Events mode (`text/event-stream`) with streaming and disconnect-aware abort support.
     *   `descriptionObject`: Expects the method to return a `RouteMethodReturnDescription` object. This allows dynamic setting of:
         *   `data`: The response body.
         *   `httpStatus`: HTTP status code (e.g., 201, 404).
@@ -160,6 +164,9 @@ The `@Controller` decorator takes an optional configuration object as a second a
 
 #### Advanced Features
 *   **Automatic Date Parsing**: JSON request bodies have ISO date strings automatically converted to `Date` objects unless `disableBodyDateConversion` is set.
+*   **Body Validation with Zod**: Per-route body schemas can be attached with `validationSchema` to enforce payload shape and return structured validation errors.
+*   **Query Parameter Validation**: `@QueryParam` supports regex validation and array query conversion for typed handlers.
 *   **Streaming**: Set `returnType: ControllerRouteReturnType.stream` to stream data.
+*   **SSE Support**: Set `returnType: ControllerRouteReturnType.sse` to stream Server-Sent Events with proper SSE headers and connection abort handling.
 *   **Access Control**: Middleware can be applied at the router level (see `RestrictedRouter.ts`) to populate `ctx.state` (e.g., auth info), which can then be injected into controllers via `@ReqState`.
 *   **IoC Integration**: The `Controller` decorator works with InversifyJS, allowing you to inject services (like `ILoggerFactory`) into the controller's constructor.

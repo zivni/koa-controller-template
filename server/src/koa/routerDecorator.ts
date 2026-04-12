@@ -3,9 +3,10 @@ import Router, { createParameterValidationMiddleware, RouterMiddleware } from "@
 import multer from "@koa/multer"
 import { DefaultContext, DefaultState, ParameterizedContext } from "koa"
 import { decorate, injectFromBase, injectable } from "inversify";
+import { z } from "zod";
 import { iocContainer } from '../settings/iocDefinitions';
 import { RequestOptions } from "../commonInterfaces";
-import { routeBodyArgumentMetadataKey, RouteParameterMetaData, routeParameterMetadataKey, RouteRequestOptionMetaData, routeRequestOptionMetadataKey, RouteStateVarMetaData, routeStateVarMetadataKey } from "./routeArgDecorators";
+import { routeBodyArgumentMetadataKey, RouteParameterMetaData, routeParameterMetadataKey, QueryParameterMetaData, routeQueryParameterMetadataKey, RouteRequestOptionMetaData, routeRequestOptionMetadataKey, RouteStateVarMetaData, routeStateVarMetadataKey } from "./routeArgDecorators";
 
 
 const upload = multer();
@@ -17,6 +18,7 @@ export enum ControllerRouteReturnType {
     basic = 0,
     stream = 1,
     descriptionObject = 2,
+    sse = 3,
 }
 
 export interface ControllerAttachedClassMethods {
@@ -34,6 +36,7 @@ interface RouteOptions {
     reloadAccessTokenBefore?: boolean //must be used with 'routeName'
     reloadAccessTokenAfter?: boolean //must be used with 'routeName'
     disableBodyDateConversion?: boolean
+    validationSchema?: z.ZodSchema<any>
 }
 
 export interface RouteMethodReturnDescription {
@@ -50,6 +53,7 @@ type RouteDefinitionMetaData = {
     options: RouteOptions;
     func: ControllerFunction;
     routeParameters: RouteParameterMetaData[]
+    queryParameters: QueryParameterMetaData[];
     routeRequestOptions: RouteRequestOptionMetaData[];
     routeStateVariables: RouteStateVarMetaData[];
     routeBodyParameterIndex: number | undefined;
@@ -68,12 +72,13 @@ export function Route(route: string | string[], options: RouteOptions = {}) {
         let func = descriptor.value;
 
         const routeParameters: RouteParameterMetaData[] = Reflect.getOwnMetadata(routeParameterMetadataKey, target, propertyName) || [];
+        const queryParameters: QueryParameterMetaData[] = Reflect.getOwnMetadata(routeQueryParameterMetadataKey, target, propertyName) || [];
         const routeRequestOptions: RouteRequestOptionMetaData[] = Reflect.getOwnMetadata(routeRequestOptionMetadataKey, target, propertyName) || [];
         const routeStateVariables: RouteStateVarMetaData[] = Reflect.getOwnMetadata(routeStateVarMetadataKey, target, propertyName) || [];
         const routeBodyParameterIndex: number | undefined = Reflect.getOwnMetadata(routeBodyArgumentMetadataKey, target, propertyName);
 
         const existingRouteDefinitions: RouteDefinitionMetaData[] = Reflect.getOwnMetadata(routeMetadataKey, target) || [];
-        existingRouteDefinitions.push({ route, options, func, routeParameters, routeRequestOptions, routeStateVariables, routeBodyParameterIndex })
+        existingRouteDefinitions.push({ route, options, func, routeParameters, queryParameters, routeRequestOptions, routeStateVariables, routeBodyParameterIndex })
         Reflect.defineMetadata(routeMetadataKey, existingRouteDefinitions, target);
     }
 }
@@ -118,7 +123,11 @@ export function Controller(prefix: string, { middlewares, controllersIocTypes }:
                             const postFunctionCall = async (ctx: DefaultContext, requestOptions: RequestOptions) => {
                                 requestOptions.testBoolQuery = testBoolQuery(ctx)
                                 const paramArgs: any[] = getRouteParameters(routeDefinition, ctx, requestOptions, options.disableBodyDateConversion);
-                                const body = options.disableBodyDateConversion ? ctx.request.body : convertBodyDates(ctx);
+                                let body = options.disableBodyDateConversion ? ctx.request.body : convertBodyDates(ctx);
+                                if (options.validationSchema) {
+                                    body = validateBodyWithZod(body, options.validationSchema, ctx);
+                                }
+
                                 return await func.call(this, ...paramArgs, body, requestOptions)
                             }
                             const middlewares: any[] = [getRouteMiddleware(options, postFunctionCall)]
@@ -200,6 +209,7 @@ export function Controller(prefix: string, { middlewares, controllersIocTypes }:
 function getRouteParameters(routeDefinition: RouteDefinitionMetaData, ctx: DefaultContext, requestOptions: RequestOptions, disableBodyDateConversion: boolean) {
     const {
         routeParameters,
+        queryParameters = [],
         routeRequestOptions = [],
         routeStateVariables = [],
         routeBodyParameterIndex
@@ -211,6 +221,39 @@ function getRouteParameters(routeDefinition: RouteDefinitionMetaData, ctx: Defau
             val = routeParameterConverters[param.parameterType](val);
         }
         paramArgs[param.parameterIndex] = val;
+    }
+    for (let queryParam of queryParameters) {
+        let val = ctx.query[queryParam.parameterName];
+        const isArray = Array.isArray(val);
+        const isArrayType = queryParam.parameterType === "Array";
+
+        if (isArray && !isArrayType) {
+            val = val[0];
+        }
+
+        if (queryParam.options.validationPattern && val !== undefined && val !== null) {
+            const testValue = isArray ? val[0] : val;
+            if (!queryParam.options.validationPattern.test(String(testValue))) {
+                ctx.throw(400, `Invalid query parameter: ${queryParam.parameterName}`);
+            }
+        }
+
+        if (!queryParam.options.disableTypeConversion) {
+            if (isArrayType && isArray && queryParam.options.arrayType) {
+                const converterName = queryParam.options.arrayType.name;
+                const converter = routeParameterConverters[converterName];
+                if (converter) {
+                    val = val.map(converter);
+                }
+            } else if (!isArrayType) {
+                const converter = routeParameterConverters[queryParam.parameterType];
+                if (converter) {
+                    val = converter(val);
+                }
+            }
+        }
+
+        paramArgs[queryParam.parameterIndex] = val;
     }
     for (let reqOption of routeRequestOptions) {
         paramArgs[reqOption.parameterIndex] = requestOptions[reqOption.key];
@@ -231,6 +274,39 @@ function getRouteParameters(routeDefinition: RouteDefinitionMetaData, ctx: Defau
 function getRouteMiddleware(options: RouteOptions, functionCall: (ctx: DefaultContext, { stream, abortController }: RequestOptions) => Promise<any>) {
     return async (ctx: ParameterizedContext) => {
         switch (options.returnType) {
+            case ControllerRouteReturnType.sse: {
+                var stream = ctx.body = new Readable();
+                stream._read = function () { };
+                stream.pipe(ctx.res);
+
+                // SSE-specific headers
+                ctx.type = 'text/event-stream';
+                ctx.set('Cache-Control', 'no-cache');
+                ctx.set('Connection', 'keep-alive');
+                ctx.set('X-Accel-Buffering', 'no'); // Disable nginx buffering
+
+                if (options.headers) {
+                    ctx.set(options.headers)
+                }
+
+                let finished = false;
+                const abortController = new AbortController();
+                ctx.req.once("close", () => {
+                    if (!finished) {
+                        abortController.abort();
+                    }
+                });
+
+                try {
+                    await functionCall(ctx, { stream, abortController, ctx });
+                } catch (error) {
+                    throw error;
+                } finally {
+                    finished = true;
+                    stream.push(null);
+                }
+                break;
+            }
             case ControllerRouteReturnType.stream: {
                 var stream = ctx.body = new Readable();
                 stream._read = function () { };
@@ -314,6 +390,16 @@ export function bindControllerToParentRouter(router: Router, controller: any) {
 
 export function bindControllerToController(thisController: any, childController: any) {
     thisController.router.use(childController.routes);
+}
+
+function validateBodyWithZod(body: any, schema: z.ZodSchema<any>, ctx: DefaultContext): any {
+    const validationResult = schema.safeParse(body);
+    if (!validationResult.success) {
+        ctx.throw(400, 'Validation failed', {
+            details: validationResult.error.issues
+        });
+    }
+    return validationResult.data;
 }
 
 const booleanRegex = /^\s*(true|1|on)\s*$/i;
