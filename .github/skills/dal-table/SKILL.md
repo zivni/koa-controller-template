@@ -172,6 +172,28 @@ get setup(): Record<string, (db: Kysely<any>) => Promise<void>> {
 ### Editing an existing entry (migration has NOT run yet)
 Simply update the entry in place — add/remove columns, indexes, or seed data within the same migration function. No new key needed.
 
+## Transaction Parameter Pattern
+
+When a DAL method accepts an optional `trx?: Transaction<Database>`, inline the `trx ?? this.db` expression directly instead of assigning it to a local variable:
+
+```typescript
+// Correct — inline the expression
+public async add(chatId: string, message: ChatStateMessage, trx?: Transaction<Database>): Promise<void> {
+    await (trx ?? this.db)
+        .insertInto("genChatMessages")
+        .values({ ... })
+        .execute()
+}
+
+// Avoid — unnecessary intermediate variable
+public async add(..., trx?: Transaction<Database>): Promise<void> {
+    const db = trx ?? this.db
+    await db
+        .insertInto("genChatMessages")
+        ...
+}
+```
+
 ## Key Rules
 
 - **Migration key format**: `"<ISO-8601 timestamp>-<DalClassName>"` — use the actual current time when writing the migration, not a placeholder
